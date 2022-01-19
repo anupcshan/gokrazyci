@@ -27,6 +27,12 @@ const (
 	pleaseBootLabel = "please-boot"
 )
 
+var (
+	authToken    = flag.String("github.authtoken", "", "Github auth token for gokrazy-bot-2")
+	booteryUrl   = flag.String("bootery_url", "", "Bootery URL")
+	pollInterval = flag.Duration("poll_interval", 5*time.Minute, "Duration between consecutive polls for new PRs")
+)
+
 func hasPleaseBoot(pr *github.PullRequest) bool {
 	for _, label := range pr.Labels {
 		if label.GetName() == pleaseBootLabel {
@@ -147,14 +153,14 @@ func buildBoot(goroot string, dir string, bootPath string) error {
 	return cmd.Run()
 }
 
-func testBoot(bootFile string, booteryUrl string, buildTimestamp time.Time) error {
+func testBoot(bootFile string, buildTimestamp time.Time) error {
 	f, err := os.Open(bootFile)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	u, err := url.Parse(booteryUrl)
+	u, err := url.Parse(*booteryUrl)
 	if err != nil {
 		return err
 	}
@@ -180,10 +186,53 @@ func testBoot(bootFile string, booteryUrl string, buildTimestamp time.Time) erro
 	return nil
 }
 
+func processPR(ctx context.Context, client *github.Client, pr *github.PullRequest, goroot string) error {
+	dir, err := os.MkdirTemp(os.Getenv("HOME"), "testboot")
+	if err != nil {
+		return err
+	}
+
+	defer os.RemoveAll(dir)
+	log.Println(dir)
+
+	if err := fetchToDir(ctx, client, dir, pr.GetHead().GetUser().GetLogin(), pr.GetHead().GetRepo().GetName(), pr.GetHead().GetSHA()); err != nil {
+		return err
+	}
+
+	if err := buildPacker(goroot, dir); err != nil {
+		return err
+	}
+
+	f, err := os.CreateTemp(os.Getenv("HOME"), "bootfile")
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+
+	if err := buildBoot(goroot, dir, f.Name()); err != nil {
+		return err
+	}
+
+	if err := testBoot(f.Name(), now); err != nil {
+		return err
+	}
+
+	log.Println("Testboot succeeded")
+	_ = os.RemoveAll(dir)
+
+	log.Println("Adding please-merge")
+	_, _, err = client.Issues.AddLabelsToIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), []string{"please-merge"})
+	if err != nil {
+		return err
+	}
+
+	log.Println("Removing please-boot")
+	_, err = client.Issues.RemoveLabelForIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), "please-boot")
+	return err
+}
+
 func main() {
-	authToken := flag.String("github.authtoken", "", "Github auth token for gokrazy-bot-2")
-	booteryUrl := flag.String("bootery_url", "", "Bootery URL")
-	pollInterval := flag.Duration("poll_interval", 5*time.Minute, "Duration between consecutive polls for new PRs")
 	flag.Parse()
 
 	if err := os.MkdirAll(os.Getenv("HOME"), 0755); err != nil {
@@ -214,53 +263,12 @@ func main() {
 		if pr != nil {
 			log.Println("Most recent PR:", pr.GetNumber(), pr.GetHead().GetUser().GetLogin(), pr.GetHead().GetRepo().GetName(), pr.GetHead().GetSHA())
 
-			dir, err := os.MkdirTemp(os.Getenv("HOME"), "testboot")
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			log.Println(dir)
-
-			if err := fetchToDir(ctx, client, dir, pr.GetHead().GetUser().GetLogin(), pr.GetHead().GetRepo().GetName(), pr.GetHead().GetSHA()); err != nil {
-				log.Fatal(err)
-			}
-
-			if err := buildPacker(goroot, dir); err != nil {
-				log.Fatal(err)
-			}
-
-			f, err := os.CreateTemp(os.Getenv("HOME"), "bootfile")
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			now := time.Now()
-
-			if err := buildBoot(goroot, dir, f.Name()); err != nil {
-				log.Fatal(err)
-			}
-
-			if err := testBoot(f.Name(), *booteryUrl, now); err != nil {
-				log.Fatal(err)
-			}
-
-			log.Println("Testboot succeeded")
-			_ = os.RemoveAll(dir)
-
-			log.Println("Adding please-merge")
-			_, _, err = client.Issues.AddLabelsToIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), []string{"please-merge"})
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			log.Println("Removing please-boot")
-			_, err = client.Issues.RemoveLabelForIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), "please-boot")
-			if err != nil {
-				log.Fatal(err)
+			if err := processPR(ctx, client, pr, goroot); err != nil {
+				log.Println("Failed to process PR %d: %v", pr.GetNumber(), err)
 			}
 		}
 
-		log.Printf("Waiting for %s before polling again", *pollInterval)
+		log.Printf("Sleeping %s before polling again", *pollInterval)
 		time.Sleep(*pollInterval)
 	}
 }
