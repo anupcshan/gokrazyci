@@ -29,7 +29,7 @@ const (
 
 var (
 	authToken    = flag.String("github.authtoken", "", "Github auth token for gokrazy-bot-2")
-	booteryUrl   = flag.String("bootery_url", "", "Bootery URL")
+	booteryURL   = flag.String("bootery_url", "", "Bootery URL")
 	pollInterval = flag.Duration("poll_interval", 5*time.Minute, "Duration between consecutive polls for new PRs")
 )
 
@@ -160,7 +160,7 @@ func testBoot(bootFile string, buildTimestamp time.Time) error {
 	}
 	defer f.Close()
 
-	u, err := url.Parse(*booteryUrl)
+	u, err := url.Parse(*booteryURL)
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_ = goroot
 
 	for {
 		pr, err := mostRecentRelevantPR(ctx, client)
@@ -264,7 +263,7 @@ func main() {
 			log.Println("Most recent PR:", pr.GetNumber(), pr.GetHead().GetUser().GetLogin(), pr.GetHead().GetRepo().GetName(), pr.GetHead().GetSHA())
 
 			if err := processPR(ctx, client, pr, goroot); err != nil {
-				log.Println("Failed to process PR %d: %v", pr.GetNumber(), err)
+				log.Printf("Failed to process PR %d: %v", pr.GetNumber(), err)
 			}
 		}
 
