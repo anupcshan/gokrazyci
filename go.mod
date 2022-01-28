@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/gokrazy/updater v0.0.0-20211121155532-30ae8cd650ea // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
