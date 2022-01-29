@@ -171,6 +171,7 @@ func testBoot(bootFile string, buildTimestamp time.Time, dir string) error {
 			return err
 		}
 
+		log.Printf("Updating %s", blFile)
 		if err := target.StreamTo(filepath.Join("device-specific", blFile), f); err != nil {
 			_ = f.Close()
 			return err
@@ -200,6 +201,7 @@ func testBoot(bootFile string, buildTimestamp time.Time, dir string) error {
 		return err
 	}
 
+	log.Println("Test booting")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -209,7 +211,10 @@ func testBoot(bootFile string, buildTimestamp time.Time, dir string) error {
 	return nil
 }
 
-func processPR(ctx context.Context, client *github.Client, pr *github.PullRequest, goroot string) error {
+func performTestBootCycle(
+	ctx context.Context, client *github.Client, goroot string,
+	repoUser string, repoName string, repoSHA string,
+) error {
 	dir, err := os.MkdirTemp(os.Getenv("HOME"), "testboot")
 	if err != nil {
 		return err
@@ -218,7 +223,7 @@ func processPR(ctx context.Context, client *github.Client, pr *github.PullReques
 	defer os.RemoveAll(dir)
 	log.Println(dir)
 
-	if err := fetchToDir(ctx, client, dir, pr.GetHead().GetUser().GetLogin(), pr.GetHead().GetRepo().GetName(), pr.GetHead().GetSHA()); err != nil {
+	if err := fetchToDir(ctx, client, dir, repoUser, repoName, repoSHA); err != nil {
 		return err
 	}
 
@@ -242,17 +247,64 @@ func processPR(ctx context.Context, client *github.Client, pr *github.PullReques
 	}
 
 	log.Println("Testboot succeeded")
-	_ = os.RemoveAll(dir)
+	return nil
+}
+
+func processPR(ctx context.Context, client *github.Client, pr *github.PullRequest, goroot string) error {
+	if err := performTestBootCycle(
+		ctx,
+		client,
+		goroot,
+		pr.GetHead().GetUser().GetLogin(),
+		pr.GetHead().GetRepo().GetName(),
+		pr.GetHead().GetSHA(),
+	); err != nil {
+		log.Println("Testboot failed")
+		return err
+	}
 
 	log.Println("Adding please-merge")
-	_, _, err = client.Issues.AddLabelsToIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), []string{"please-merge"})
-	if err != nil {
+	if _, _, err := client.Issues.AddLabelsToIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), []string{"please-merge"}); err != nil {
 		return err
 	}
 
 	log.Println("Removing please-boot")
-	_, err = client.Issues.RemoveLabelForIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), "please-boot")
+	_, err := client.Issues.RemoveLabelForIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), "please-boot")
 	return err
+}
+
+func processDevBranch(ctx context.Context, client *github.Client, goroot string) error {
+	compare, _, err := client.Repositories.CompareCommits(ctx, githubRepoOwner, githubRepoName, "master", "dev")
+	if err != nil {
+		return err
+	}
+
+	if compare.GetStatus() == "ahead" {
+		devCommit := compare.Commits[len(compare.Commits)-1]
+		log.Printf("Processing dev commit %s", devCommit.GetSHA())
+		if err := performTestBootCycle(
+			ctx,
+			client,
+			goroot,
+			githubRepoOwner,
+			githubRepoName,
+			devCommit.GetSHA(),
+		); err != nil {
+			return err
+		} else {
+			_, _, err = client.Git.UpdateRef(ctx, githubRepoOwner, githubRepoName, &github.Reference{
+				Ref: github.String("heads/master"),
+				Object: &github.GitObject{
+					SHA: github.String(devCommit.GetSHA()),
+				},
+			}, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func main() {
@@ -288,6 +340,10 @@ func main() {
 			if err := processPR(ctx, client, pr, goroot); err != nil {
 				log.Printf("Failed to process PR %d: %v", pr.GetNumber(), err)
 			}
+		}
+
+		if err := processDevBranch(ctx, client, goroot); err != nil {
+			log.Printf("Failed to process dev branch update: %v", err)
 		}
 
 		log.Printf("Sleeping %s before polling again", *pollInterval)
