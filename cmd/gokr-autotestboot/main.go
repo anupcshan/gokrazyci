@@ -273,40 +273,6 @@ func processPR(ctx context.Context, client *github.Client, pr *github.PullReques
 	return err
 }
 
-func processDevBranch(ctx context.Context, client *github.Client, goroot string) error {
-	compare, _, err := client.Repositories.CompareCommits(ctx, githubRepoOwner, githubRepoName, "master", "dev")
-	if err != nil {
-		return err
-	}
-
-	if compare.GetStatus() == "ahead" {
-		devCommit := compare.Commits[len(compare.Commits)-1]
-		log.Printf("Processing dev commit %s", devCommit.GetSHA())
-		if err := performTestBootCycle(
-			ctx,
-			client,
-			goroot,
-			githubRepoOwner,
-			githubRepoName,
-			devCommit.GetSHA(),
-		); err != nil {
-			return err
-		} else {
-			_, _, err = client.Git.UpdateRef(ctx, githubRepoOwner, githubRepoName, &github.Reference{
-				Ref: github.String("heads/master"),
-				Object: &github.GitObject{
-					SHA: github.String(devCommit.GetSHA()),
-				},
-			}, false)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 func main() {
 	flag.Parse()
 
@@ -340,10 +306,6 @@ func main() {
 			if err := processPR(ctx, client, pr, goroot); err != nil {
 				log.Printf("Failed to process PR %d: %v", pr.GetNumber(), err)
 			}
-		}
-
-		if err := processDevBranch(ctx, client, goroot); err != nil {
-			log.Printf("Failed to process dev branch update: %v", err)
 		}
 
 		log.Printf("Sleeping %s before polling again", *pollInterval)
