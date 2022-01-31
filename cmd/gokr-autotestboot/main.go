@@ -58,7 +58,11 @@ func mostRecentRelevantPR(ctx context.Context, client *github.Client) (*github.P
 	}
 
 	for _, pr := range prs {
-		if pr.GetUser().GetLogin() != githubUser {
+		switch pr.GetUser().GetLogin() {
+		case githubUser, githubRepoOwner:
+			// Allow these users
+		default:
+			// All other pr authors need to be manually approved
 			continue
 		}
 		if !hasPleaseBoot(pr) {
