@@ -117,7 +117,7 @@ func updateFirmware(ctx context.Context, client *github.Client, owner, repo stri
 	log.Printf("newTree = %+v", newTree)
 
 	newCommit, _, err := client.Git.CreateCommit(ctx, owner, repo, &github.Commit{
-		Message: github.String("auto-update to https://github.com/u-boot/u-boot/commit/" + upstreamSHA),
+		Message: github.String("auto-update u-boot to https://github.com/u-boot/u-boot/commit/" + upstreamSHA),
 		Tree:    newTree,
 		Parents: []*github.Commit{lastCommit},
 	})
@@ -138,7 +138,7 @@ func updateFirmware(ctx context.Context, client *github.Client, owner, repo stri
 	log.Printf("newRef = %+v", newRef)
 
 	pr, _, err := client.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
-		Title: github.String("auto-update to " + upstreamSHA),
+		Title: github.String("auto-update u-boot to " + upstreamSHA),
 		Head:  github.String("pull-" + upstreamSHA),
 		Base:  github.String("master"),
 	})
