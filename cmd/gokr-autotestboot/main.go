@@ -219,7 +219,7 @@ func performTestBootCycle(
 	ctx context.Context, client *github.Client, goroot string,
 	repoUser string, repoName string, repoSHA string,
 ) error {
-	dir, err := os.MkdirTemp(os.Getenv("HOME"), "testboot")
+	dir, err := os.MkdirTemp(filepath.Join(os.Getenv("HOME"), repoSHA), "testboot")
 	if err != nil {
 		return err
 	}
