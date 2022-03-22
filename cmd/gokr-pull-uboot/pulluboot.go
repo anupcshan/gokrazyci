@@ -42,7 +42,7 @@ func updateFirmware(ctx context.Context, client *github.Client, owner, repo stri
 
 	upstreamSHA := upstreamCommit.GetSHA()
 
-	lastRef, _, err := client.Git.GetRef(ctx, owner, repo, "heads/master")
+	lastRef, _, err := client.Git.GetRef(ctx, owner, repo, "heads/main")
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func updateFirmware(ctx context.Context, client *github.Client, owner, repo stri
 	pr, _, err := client.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
 		Title: github.String("auto-update u-boot to " + upstreamSHA),
 		Head:  github.String("pull-" + upstreamSHA),
-		Base:  github.String("master"),
+		Base:  github.String("main"),
 	})
 	if err != nil {
 		return err
