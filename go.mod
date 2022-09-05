@@ -3,7 +3,7 @@ module github.com/anupcshan/gokrazyci
 go 1.19
 
 require (
-	github.com/anupcshan/gotool v0.0.0-20220904204120-230203462bda
+	github.com/anupcshan/gotool v0.0.0-20220905042231-8a9549c645b9
 	github.com/gokrazy/updater v0.0.0-20211121155532-30ae8cd650ea
 	github.com/google/go-github/v35 v35.3.0
 )
