@@ -75,6 +75,7 @@ func mostRecentRelevantPR(ctx context.Context, client *github.Client) (*github.P
 }
 
 func fetchToDir(ctx context.Context, client *github.Client, dir string, repoOwner string, repoName string, repoHash string) error {
+	log.Println("Fetching git blobs")
 	commit, _, err := client.Git.GetCommit(ctx, repoOwner, repoName, repoHash)
 	if err != nil {
 		return err
@@ -135,12 +136,22 @@ func env(goroot string) []string {
 }
 
 func buildPacker(goroot string, dir string) error {
+	log.Println("Building packer")
+
 	cmd := exec.Command(filepath.Join(goroot, "bin/go"), "get", "github.com/gokrazy/tools/cmd/gokr-packer")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Dir = dir
 	cmd.Env = env(goroot)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
 
+	cmd = exec.Command(filepath.Join(goroot, "bin/go"), "install", "github.com/gokrazy/tools/cmd/gokr-packer")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Dir = dir
+	cmd.Env = env(goroot)
 	return cmd.Run()
 }
 
@@ -219,6 +230,10 @@ func performTestBootCycle(
 	ctx context.Context, client *github.Client, goroot string,
 	repoUser string, repoName string, repoSHA string,
 ) error {
+	if err := os.MkdirAll(filepath.Join(os.Getenv("HOME"), repoSHA), 0755); err != nil {
+		return err
+	}
+
 	dir, err := os.MkdirTemp(filepath.Join(os.Getenv("HOME"), repoSHA), "testboot")
 	if err != nil {
 		return err

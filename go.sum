@@ -1,7 +1,5 @@
-github.com/anupcshan/gotool v0.0.0-20220904204120-230203462bda h1:OkzCBoB0YdmGOhiNtWEQAbAT6lS8KRIsJMNpoZ4UFfY=
-github.com/anupcshan/gotool v0.0.0-20220904204120-230203462bda/go.mod h1:OnLDhgJf9c3Qa2HKs12V9ODFz9UvYpurGyw8arLIP6c=
-github.com/anupcshan/gotool v0.0.0-20220905042231-8a9549c645b9 h1:h9To2udeRNcn+r4DKo7urnoNq7FIbnJOgeel1JrULZc=
-github.com/anupcshan/gotool v0.0.0-20220905042231-8a9549c645b9/go.mod h1:OnLDhgJf9c3Qa2HKs12V9ODFz9UvYpurGyw8arLIP6c=
+github.com/anupcshan/gotool v0.0.0-20220905043818-32ca24f257a2 h1:bMMxwGzaUseJoMib0Kbpz6/1eRfhT/DMTExclaWmARA=
+github.com/anupcshan/gotool v0.0.0-20220905043818-32ca24f257a2/go.mod h1:OnLDhgJf9c3Qa2HKs12V9ODFz9UvYpurGyw8arLIP6c=
 github.com/gokrazy/updater v0.0.0-20211121155532-30ae8cd650ea h1:NM/sLCKWWc9mnMtJZGbwOtaAwEpCEe6tlcXWKp3LEKk=
 github.com/gokrazy/updater v0.0.0-20211121155532-30ae8cd650ea/go.mod h1:PYOvzGOL4nlBmuxu7IyKQTFLaxr61+WPRNRzVtuYOHw=
 github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
