@@ -221,6 +221,9 @@ func testBoot(bootFile string, buildTimestamp time.Time, dir string) error {
 	if err != nil {
 		return err
 	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Testboot failed with statuscode %v", resp.StatusCode)
+	}
 	defer resp.Body.Close()
 	io.Copy(os.Stderr, resp.Body)
 	return nil
