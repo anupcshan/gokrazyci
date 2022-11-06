@@ -25,6 +25,7 @@ const (
 	githubUser      = "gokrazy-bot-2"
 	githubRepoOwner = "anupcshan"
 	githubRepoName  = "gokrazy-odroidxu4-kernel"
+	failedBootLabel = "failed-boot"
 	pleaseBootLabel = "please-boot"
 )
 
@@ -39,14 +40,18 @@ func bootloaderFiles() []string {
 	return []string{"bl1.bin", "bl2.bin", "u-boot.bin", "tzsw.bin"}
 }
 
-func hasPleaseBoot(pr *github.PullRequest) bool {
+func shouldTestbool(pr *github.PullRequest) bool {
+	var hasPleaseBoot bool
 	for _, label := range pr.Labels {
+		if label.GetName() == failedBootLabel {
+			return false
+		}
 		if label.GetName() == pleaseBootLabel {
-			return true
+			hasPleaseBoot = true
 		}
 	}
 
-	return false
+	return hasPleaseBoot
 }
 
 func mostRecentRelevantPR(ctx context.Context, client *github.Client) (*github.PullRequest, error) {
@@ -65,7 +70,7 @@ func mostRecentRelevantPR(ctx context.Context, client *github.Client) (*github.P
 			// All other pr authors need to be manually approved
 			continue
 		}
-		if !hasPleaseBoot(pr) {
+		if !shouldTestbool(pr) {
 			continue
 		}
 		return pr, nil
@@ -281,17 +286,21 @@ func processPR(ctx context.Context, client *github.Client, pr *github.PullReques
 		pr.GetHead().GetRepo().GetName(),
 		pr.GetHead().GetSHA(),
 	); err != nil {
-		log.Println("Testboot failed")
-		return err
-	}
+		log.Printf("Testboot failed with %+v", err)
 
-	log.Println("Adding please-merge")
-	if _, _, err := client.Issues.AddLabelsToIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), []string{"please-merge"}); err != nil {
-		return err
+		log.Println("Adding failed-boot")
+		if _, _, err := client.Issues.AddLabelsToIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), []string{failedBootLabel}); err != nil {
+			return err
+		}
+	} else {
+		log.Println("Adding please-merge")
+		if _, _, err := client.Issues.AddLabelsToIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), []string{"please-merge"}); err != nil {
+			return err
+		}
 	}
 
 	log.Println("Removing please-boot")
-	_, err := client.Issues.RemoveLabelForIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), "please-boot")
+	_, err := client.Issues.RemoveLabelForIssue(ctx, githubRepoOwner, githubRepoName, pr.GetNumber(), pleaseBootLabel)
 	return err
 }
 
