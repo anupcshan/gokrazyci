@@ -179,7 +179,73 @@ func buildBoot(goroot string, dir string, bootPath string) error {
 	return cmd.Run()
 }
 
+func useBakeries() error {
+	u, err := url.Parse(*booteryURL)
+	if err != nil {
+		return err
+	}
+	u.Path = "usebakeries"
+	v := u.Query()
+	v.Set("slug", "anupcshan/gokrazy-odroidxu4-kernel")
+	u.RawQuery = v.Encode()
+
+	req, err := http.NewRequest(http.MethodPut, u.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Use bakeries")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Use bakeries failed with statuscode %v", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	io.Copy(os.Stderr, resp.Body)
+	return nil
+}
+
+func releaseBakeries() error {
+	u, err := url.Parse(*booteryURL)
+	if err != nil {
+		return err
+	}
+	u.Path = "releasebakeries"
+	v := u.Query()
+	v.Set("slug", "anupcshan/gokrazy-odroidxu4-kernel")
+	u.RawQuery = v.Encode()
+
+	req, err := http.NewRequest(http.MethodPut, u.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Release bakeries")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Release bakeries failed with statuscode %v", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	io.Copy(os.Stderr, resp.Body)
+	return nil
+}
+
 func testBoot(bootFile string, buildTimestamp time.Time, dir string) error {
+	if err := useBakeries(); err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := releaseBakeries(); err != nil {
+			log.Println(err)
+		}
+	}()
+
 	target, err := updater.NewTarget(*bakeURL, &http.Client{})
 	if err != nil {
 		return err
