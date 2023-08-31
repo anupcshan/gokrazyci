@@ -1,9 +1,9 @@
 module github.com/anupcshan/gokrazyci
 
-go 1.20
+go 1.21
 
 require (
-	github.com/anupcshan/gotool v0.0.0-20230308093503-5d941074d37b
+	github.com/anupcshan/gotool v0.0.0-20230809093247-30e42b879357
 	github.com/gokrazy/updater v0.0.0-20230215172637-813ccc7f21e2
 	github.com/google/go-github/v35 v35.3.0
 )

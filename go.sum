@@ -1,5 +1,5 @@
-github.com/anupcshan/gotool v0.0.0-20230308093503-5d941074d37b h1:bob37Db2MqmdMjO50NFx+tUzpwJ2CalD+XCaBSEcd7k=
-github.com/anupcshan/gotool v0.0.0-20230308093503-5d941074d37b/go.mod h1:OnLDhgJf9c3Qa2HKs12V9ODFz9UvYpurGyw8arLIP6c=
+github.com/anupcshan/gotool v0.0.0-20230809093247-30e42b879357 h1:HjvxRrOnndVclhQBSB7SheLyeTB+QdHJLeZrX0ovQeI=
+github.com/anupcshan/gotool v0.0.0-20230809093247-30e42b879357/go.mod h1:OnLDhgJf9c3Qa2HKs12V9ODFz9UvYpurGyw8arLIP6c=
 github.com/gokrazy/updater v0.0.0-20230215172637-813ccc7f21e2 h1:kBY5R1tSf+EYZ+QaSrofLaVJtBqYsVNVBWkdMq3Smcg=
 github.com/gokrazy/updater v0.0.0-20230215172637-813ccc7f21e2/go.mod h1:PYOvzGOL4nlBmuxu7IyKQTFLaxr61+WPRNRzVtuYOHw=
 github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
